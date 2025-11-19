@@ -10,22 +10,37 @@
         .pagina { display: none; max-width: 600px; margin: 20px auto; padding: 25px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
         .pagina.activa { display: block; }
         h1, h2, h3 { color: #1a2b4a; margin-top: 0; }
+        
         button { font-size: 1rem; font-weight: 600; padding: 12px 20px; margin: 8px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background-color: #007bff; color: white; }
         button:hover { opacity: 0.85; }
+        
+        /* Clases específicas de botones */
         button.btn-secundario { background-color: #6c757d; }
         button.btn-categoria { background-color: #17a2b8; min-width: 150px; }
         button.btn-categoria.random { background-color: #ffc107; color: #333; }
-        input[type="number"], input[type="text"], select { font-size: 1rem; padding: 10px; margin: 5px 0 15px 0; width: calc(100% - 22px); border: 1px solid #ddd; border-radius: 6px; }
-        label { font-weight: 600; display: block; margin-top: 10px; text-align: left; }
-        #contenedorNombres input { margin-bottom: 5px; }
-        #contenedorBotonesJugadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; }
+        
+        /* Estilos de botones de jugador */
         .btn-jugador { padding: 20px; font-size: 1.1rem; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
         .btn-jugador.verde { background-color: #28a745; }
         .btn-jugador.naranja { background-color: #ffc107; color: #333; }
         .btn-jugador.rojo { background-color: #dc3545; }
+        
+        /* Inputs y Layout */
+        input[type="number"], input[type="text"], select { font-size: 1rem; padding: 10px; margin: 5px 0 15px 0; width: calc(100% - 22px); border: 1px solid #ddd; border-radius: 6px; }
+        label { font-weight: 600; display: block; margin-top: 10px; text-align: left; }
+        #contenedorNombres input { margin-bottom: 5px; }
+        #contenedorBotonesJugadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; }
+        
+        /* Página de Palabra Secreta */
         #paginaPalabra { background-color: #1a2b4a; color: white; }
         #paginaPalabra h2 { color: #f0f2f5; }
         #palabraSecreta { font-size: 2.5rem; font-weight: bold; color: #ffc107; padding: 40px 0; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 20px 0; min-height: 100px; display: flex; align-items: center; justify-content: center; }
+
+        /* === CLASE MAGICA PARA BLOQUEO INVISIBLE === */
+        /* Cuando esta clase se agrega, nada dentro es clickeable, pero se ve igual */
+        .bloqueo-temporal {
+            pointer-events: none; 
+        }
     </style>
 </head>
 <body>
@@ -49,8 +64,7 @@
 
     <div id="paginaCategorias" class="pagina">
         <h2 data-lang-key="categoryTitle"></h2>
-        <div id="contenedorCategorias">
-            </div>
+        <div id="contenedorCategorias"></div>
         <hr>
         <button id="btnVolverConfig" class="btn-secundario" data-lang-key="backToConfig"></button>
     </div>
@@ -89,6 +103,7 @@
         let palabraJuegoActual = '';
         let indicesImpostores = [];
         let lastScrollPosition = 0;
+        let timerInterval = null;
 
         // ======================================================
         // SELECTORES DEL DOM
@@ -104,6 +119,7 @@
         const contenedorCategorias = document.getElementById('contenedorCategorias');
         const btnVolverConfig = document.getElementById('btnVolverConfig');
 
+        const paginaJuego = document.getElementById('paginaJuego'); // Selector para la página entera
         const categoriaActualElem = document.getElementById('categoriaActual');
         const contenedorBotonesJugadores = document.getElementById('contenedorBotonesJugadores');
         const btnVolverCategorias = document.getElementById('btnVolverCategorias');
@@ -116,9 +132,8 @@
         numImpostoresInput.addEventListener('focus', function() { this.value = ''; });
 
         // ======================================================
-        // LÓGICA DE IDIOMA
+        // LÓGICA DE IDIOMA Y CARGA INICIAL
         // ======================================================
-        // (Sin cambios)
         function poblarSelectorIdiomas() {
             langSelector.innerHTML = '';
             AVAILABLE_LANGUAGES.forEach(lang => {
@@ -158,18 +173,14 @@
         }
 
         // ======================================================
-        // LÓGICA DE PÁGINA 1: CONFIGURACIÓN
+        // PÁGINA 1: CONFIGURACIÓN
         // ======================================================
-        // (Sin cambios, la lógica de guardar nombres funciona igual)
         function obtenerNombresActuales() {
             const inputs = contenedorNombres.querySelectorAll('input[type="text"]');
             const nombres = [];
-            inputs.forEach(input => {
-                nombres.push(input.value);
-            });
+            inputs.forEach(input => { nombres.push(input.value); });
             return nombres;
         }
-
         function generarCamposNombres() {
             const nombresGuardados = obtenerNombresActuales();
             const num = parseInt(numJugadoresInput.value, 10) || 3;
@@ -180,57 +191,35 @@
                 input.type = 'text';
                 input.placeholder = `${LANG_DATA.ui.playerPlaceholder || 'Jugador'} ${i + 1}`;
                 input.dataset.index = i;
-                if (nombresGuardados[i] !== undefined) {
-                    input.value = nombresGuardados[i];
-                }
+                if (nombresGuardados[i] !== undefined) input.value = nombresGuardados[i];
                 contenedorNombres.appendChild(input);
             }
         }
-
         btnConfirmarJugadores.addEventListener('click', () => {
             let numJ = parseInt(numJugadoresInput.value, 10);
             let numI = parseInt(numImpostoresInput.value, 10);
-            if (isNaN(numJ) || numJ < 3) {
-                alert(LANG_DATA.ui.minPlayersAlert);
-                numJugadoresInput.value = 3;
-                generarCamposNombres();
-                return;
-            }
-            if (isNaN(numI) || numI < 1) {
-                alert(LANG_DATA.ui.impostorMinAlert);
-                numImpostoresInput.value = 1;
-                return;
-            }
-            if (numI >= numJ) {
-                alert(LANG_DATA.ui.impostorAlert);
-                numImpostoresInput.value = 1;
-                return;
-            }
+            if (isNaN(numJ) || numJ < 3) { alert(LANG_DATA.ui.minPlayersAlert); numJugadoresInput.value = 3; generarCamposNombres(); return; }
+            if (isNaN(numI) || numI < 1) { alert(LANG_DATA.ui.impostorMinAlert); numImpostoresInput.value = 1; return; }
+            if (numI >= numJ) { alert(LANG_DATA.ui.impostorAlert); numImpostoresInput.value = 1; return; }
 
             numImpostores = numI;
             jugadores = [];
-            
             const nombresFinales = obtenerNombresActuales(); 
             const inputsPlaceholders = contenedorNombres.querySelectorAll('input[type="text"]');
             nombresFinales.forEach((nombre, index) => {
                 const nombreLimpio = nombre.trim() || inputsPlaceholders[index].placeholder;
                 jugadores.push({ nombre: nombreLimpio, palabra: '', vistas: 0 });
             });
-            
             cargarPaginaCategorias();
             mostrarPagina('paginaCategorias');
         });
-
         numJugadoresInput.addEventListener('change', generarCamposNombres);
 
         // ======================================================
-        // LÓGICA DE PÁGINA 2: CATEGORÍAS (JS MODIFICADO)
+        // PÁGINA 2: CATEGORÍAS
         // ======================================================
-        
         function cargarPaginaCategorias() {
             contenedorCategorias.innerHTML = '';
-            
-            // --- Botón de Azar AHORA VA PRIMERO ---
             const btnAzar = document.createElement('button');
             btnAzar.textContent = LANG_DATA.ui.randomCategory;
             btnAzar.className = 'btn-categoria random';
@@ -239,9 +228,7 @@
                 const catAzar = keys[Math.floor(Math.random() * keys.length)];
                 prepararJuego(catAzar);
             };
-            contenedorCategorias.appendChild(btnAzar); // Se añade primero
-
-            // --- El resto de categorías van después ---
+            contenedorCategorias.appendChild(btnAzar);
             for (const categoria in LANG_DATA.categories) {
                 const btn = document.createElement('button');
                 btn.textContent = categoria;
@@ -250,13 +237,11 @@
                 contenedorCategorias.appendChild(btn);
             }
         }
-        
         btnVolverConfig.addEventListener('click', () => { mostrarPagina('paginaConfiguracion'); });
 
         // ======================================================
-        // LÓGICA DE PÁGINA 3: JUEGO
+        // PÁGINA 3: JUEGO
         // ======================================================
-        // (Sin cambios)
         function prepararJuego(categoria) {
             const listaPalabras = LANG_DATA.categories[categoria];
             palabraJuegoActual = listaPalabras[Math.floor(Math.random() * listaPalabras.length)];
@@ -296,24 +281,59 @@
         btnVolverCategorias.addEventListener('click', () => { mostrarPagina('paginaCategorias'); });
 
         // ======================================================
-        // LÓGICA DE PÁGINA 4: REVELAR PALABRA
+        // PÁGINA 4: REVELAR (CON LÓGICA DE BLOQUEO INVISIBLE)
         // ======================================================
-        // (Sin cambios)
         function mostrarPalabra(index) {
             lastScrollPosition = window.scrollY;
             const jugador = jugadores[index];
             jugador.vistas++;
             nombreJugadorPalabraElem.textContent = `${jugador.nombre}, ${LANG_DATA.ui.wordTitle}`;
             palabraSecretaElem.textContent = jugador.palabra;
+            
             mostrarPagina('paginaPalabra');
+
+            // Reset del Timer
+            if (timerInterval) clearInterval(timerInterval);
+            let tiempoRestante = 5;
+            const textoOriginalBoton = LANG_DATA.ui.hideButton || "Ocultar";
+            
+            btnOcultarPalabra.textContent = `${textoOriginalBoton} (${tiempoRestante})`;
+
+            timerInterval = setInterval(() => {
+                tiempoRestante--;
+                btnOcultarPalabra.textContent = `${textoOriginalBoton} (${tiempoRestante})`;
+
+                if (tiempoRestante <= 0) {
+                    clearInterval(timerInterval);
+                    cerrarPantallaPalabra();
+                }
+            }, 1000);
         }
-        btnOcultarPalabra.addEventListener('click', () => {
+
+        function cerrarPantallaPalabra() {
+            if (timerInterval) clearInterval(timerInterval);
+            
             mostrarPagina('paginaJuego');
             dibujarBotonesJugadores();
+            
             requestAnimationFrame(() => {
                 window.scrollTo(0, lastScrollPosition);
             });
-        });
+
+            // ======================================================
+            // BLOQUEO INVISIBLE (POINTER-EVENTS)
+            // ======================================================
+            // Agregamos una clase al contenedor principal que desactiva los clics
+            paginaJuego.classList.add('bloqueo-temporal');
+            
+            // Después de 1.2 segundos (un poco más de margen), devolvemos los clics
+            // Visualmente NO cambia nada.
+            setTimeout(() => {
+                paginaJuego.classList.remove('bloqueo-temporal');
+            }, 500);
+        }
+
+        btnOcultarPalabra.addEventListener('click', cerrarPantallaPalabra);
 
         // ======================================================
         // INICIO
