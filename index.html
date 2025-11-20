@@ -14,30 +14,25 @@
         button { font-size: 1rem; font-weight: 600; padding: 12px 20px; margin: 8px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background-color: #007bff; color: white; }
         button:hover { opacity: 0.85; }
         
-        /* Clases específicas de botones */
         button.btn-secundario { background-color: #6c757d; }
         button.btn-categoria { background-color: #17a2b8; min-width: 150px; }
         button.btn-categoria.random { background-color: #ffc107; color: #333; }
         
-        /* Estilos de botones de jugador */
         .btn-jugador { padding: 20px; font-size: 1.1rem; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
         .btn-jugador.verde { background-color: #28a745; }
         .btn-jugador.naranja { background-color: #ffc107; color: #333; }
         .btn-jugador.rojo { background-color: #dc3545; }
         
-        /* Inputs y Layout */
         input[type="number"], input[type="text"], select { font-size: 1rem; padding: 10px; margin: 5px 0 15px 0; width: calc(100% - 22px); border: 1px solid #ddd; border-radius: 6px; }
         label { font-weight: 600; display: block; margin-top: 10px; text-align: left; }
         #contenedorNombres input { margin-bottom: 5px; }
         #contenedorBotonesJugadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0; }
         
-        /* Página de Palabra Secreta */
         #paginaPalabra { background-color: #1a2b4a; color: white; }
         #paginaPalabra h2 { color: #f0f2f5; }
         #palabraSecreta { font-size: 2.5rem; font-weight: bold; color: #ffc107; padding: 40px 0; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 20px 0; min-height: 100px; display: flex; align-items: center; justify-content: center; }
 
-        /* === CLASE MAGICA PARA BLOQUEO INVISIBLE === */
-        /* Cuando esta clase se agrega, nada dentro es clickeable, pero se ve igual */
+        /* Bloqueo visual (botones grises no clickeables) */
         .bloqueo-temporal {
             pointer-events: none; 
         }
@@ -47,18 +42,13 @@
 
     <div id="paginaConfiguracion" class="pagina activa">
         <h1 data-lang-key="configTitle"></h1>
-        
         <label for="langSelector" data-lang-key="langSelectLabel">Selector de Idioma:</label>
         <select id="langSelector"></select>
-
         <label for="numJugadores" data-lang-key="numPlayersLabel"></label>
         <input type="number" id="numJugadores" value="3" min="3" max="20">
-        
         <div id="contenedorNombres"></div>
-        
         <label for="numImpostores" data-lang-key="numImpostorsLabel"></label>
         <input type="number" id="numImpostores" value="1" min="1" max="19">
-        
         <button id="btnConfirmarJugadores" data-lang-key="confirmButton"></button>
     </div>
 
@@ -84,14 +74,28 @@
         <button id="btnOcultarPalabra" data-lang-key="hideButton"></button>
     </div>
 
-
     <script>
         // ======================================================
         // CONFIGURACIÓN DE IDIOMAS
         // ======================================================
         const AVAILABLE_LANGUAGES = [
-            { file: 'spanish.js', name: 'Español' },
-            { file: 'english.js', name: 'English' }
+            { file: 'chileno.js', name: '🇨🇱 Chileno' },
+
+            { file: 'spanish.js', name: '🇲🇽 Español' },
+
+            { file: 'english.js', name: '🇺 English' },
+
+            { file: 'french.js', name: '🇫🇷 French' },
+
+            { file: 'german.js', name: '🇩🇪🇫 German' },
+
+            { file: 'italian.js', name: '🇷🇮🇹 Italian' },
+
+            { file: 'japanese.js', name: '🇯🇵 Japanese' },
+
+            { file: 'chinese.js', name: '🇨🇳 Chinese' },
+
+            { file: 'korean.js', name: '🇰🇷 Korean' }
         ];
 
         // ======================================================
@@ -104,26 +108,25 @@
         let indicesImpostores = [];
         let lastScrollPosition = 0;
         let timerInterval = null;
+        
+        // NUEVA VARIABLE PARA EL BLOQUEO DE NAVEGACIÓN
+        let navegacionBloqueada = false;
 
         // ======================================================
-        // SELECTORES DEL DOM
+        // SELECTORES
         // ======================================================
         const paginas = document.querySelectorAll('.pagina');
         const langSelector = document.getElementById('langSelector');
-        
         const numJugadoresInput = document.getElementById('numJugadores');
         const numImpostoresInput = document.getElementById('numImpostores');
         const contenedorNombres = document.getElementById('contenedorNombres');
         const btnConfirmarJugadores = document.getElementById('btnConfirmarJugadores');
-
         const contenedorCategorias = document.getElementById('contenedorCategorias');
         const btnVolverConfig = document.getElementById('btnVolverConfig');
-
-        const paginaJuego = document.getElementById('paginaJuego'); // Selector para la página entera
+        const paginaJuego = document.getElementById('paginaJuego');
         const categoriaActualElem = document.getElementById('categoriaActual');
         const contenedorBotonesJugadores = document.getElementById('contenedorBotonesJugadores');
         const btnVolverCategorias = document.getElementById('btnVolverCategorias');
-
         const nombreJugadorPalabraElem = document.getElementById('nombreJugadorPalabra');
         const palabraSecretaElem = document.getElementById('palabraSecreta');
         const btnOcultarPalabra = document.getElementById('btnOcultarPalabra');
@@ -132,7 +135,7 @@
         numImpostoresInput.addEventListener('focus', function() { this.value = ''; });
 
         // ======================================================
-        // LÓGICA DE IDIOMA Y CARGA INICIAL
+        // IDIOMA
         // ======================================================
         function poblarSelectorIdiomas() {
             langSelector.innerHTML = '';
@@ -165,15 +168,61 @@
         langSelector.addEventListener('change', (e) => { cargarIdioma(e.target.value); });
 
         // ======================================================
-        // NAVEGACIÓN
+        // NAVEGACIÓN CON HISTORIAL + BLOQUEO
         // ======================================================
-        function mostrarPagina(idPagina) {
+        
+        function renderizarPagina(idPagina) {
             paginas.forEach(pagina => { pagina.classList.remove('activa'); });
             document.getElementById(idPagina).classList.add('activa');
         }
 
+        function irAPagina(idPagina) {
+            window.history.pushState({ page: idPagina }, "", "#" + idPagina);
+            renderizarPagina(idPagina);
+        }
+
+        // ESCUCHA EL BOTÓN ATRÁS
+        window.addEventListener('popstate', function(event) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            // === LÓGICA DE BLOQUEO DE BOTÓN ATRÁS ===
+            if (navegacionBloqueada) {
+                // Si la navegación está bloqueada, forzamos al usuario a quedarse en 'paginaJuego'
+                // Empujamos de nuevo el estado actual al historial para cancelar el "Atrás"
+                window.history.pushState({ page: 'paginaJuego' }, "", "#paginaJuego");
+                renderizarPagina('paginaJuego');
+                return; // No hacemos nada más
+            }
+            // =========================================
+
+            if (event.state && event.state.page) {
+                // Seguridad: No dejar entrar a 'paginaPalabra' con el botón adelante
+                if (event.state.page === 'paginaPalabra') {
+                    window.history.replaceState({ page: 'paginaJuego' }, "", "#paginaJuego");
+                    renderizarPagina('paginaJuego');
+                    return; 
+                }
+
+                renderizarPagina(event.state.page);
+                
+                if (event.state.page === 'paginaJuego') {
+                     requestAnimationFrame(() => {
+                        window.scrollTo(0, lastScrollPosition);
+                    });
+                }
+            } else {
+                renderizarPagina('paginaConfiguracion');
+            }
+        });
+
+        window.history.replaceState({ page: 'paginaConfiguracion' }, "", "#config");
+
+
         // ======================================================
-        // PÁGINA 1: CONFIGURACIÓN
+        // PAGINA 1
         // ======================================================
         function obtenerNombresActuales() {
             const inputs = contenedorNombres.querySelectorAll('input[type="text"]');
@@ -195,6 +244,7 @@
                 contenedorNombres.appendChild(input);
             }
         }
+        
         btnConfirmarJugadores.addEventListener('click', () => {
             let numJ = parseInt(numJugadoresInput.value, 10);
             let numI = parseInt(numImpostoresInput.value, 10);
@@ -210,13 +260,14 @@
                 const nombreLimpio = nombre.trim() || inputsPlaceholders[index].placeholder;
                 jugadores.push({ nombre: nombreLimpio, palabra: '', vistas: 0 });
             });
+            
             cargarPaginaCategorias();
-            mostrarPagina('paginaCategorias');
+            irAPagina('paginaCategorias');
         });
         numJugadoresInput.addEventListener('change', generarCamposNombres);
 
         // ======================================================
-        // PÁGINA 2: CATEGORÍAS
+        // PAGINA 2
         // ======================================================
         function cargarPaginaCategorias() {
             contenedorCategorias.innerHTML = '';
@@ -237,14 +288,23 @@
                 contenedorCategorias.appendChild(btn);
             }
         }
-        btnVolverConfig.addEventListener('click', () => { mostrarPagina('paginaConfiguracion'); });
+        btnVolverConfig.addEventListener('click', () => { window.history.back(); });
 
         // ======================================================
-        // PÁGINA 3: JUEGO
+        // PAGINA 3: JUEGO
         // ======================================================
         function prepararJuego(categoria) {
             const listaPalabras = LANG_DATA.categories[categoria];
-            palabraJuegoActual = listaPalabras[Math.floor(Math.random() * listaPalabras.length)];
+            let nuevaPalabra = '';
+            if (listaPalabras.length > 1 && typeof ultimaPalabraJugada !== 'undefined') {
+                do { nuevaPalabra = listaPalabras[Math.floor(Math.random() * listaPalabras.length)]; } 
+                while (nuevaPalabra === ultimaPalabraJugada);
+            } else {
+                nuevaPalabra = listaPalabras[Math.floor(Math.random() * listaPalabras.length)];
+            }
+            palabraJuegoActual = nuevaPalabra;
+            window.ultimaPalabraJugada = palabraJuegoActual;
+
             indicesImpostores = [];
             let indicesDisponibles = Array.from({ length: jugadores.length }, (_, i) => i);
             for (let i = 0; i < numImpostores; i++) {
@@ -261,9 +321,10 @@
                 }
             });
             categoriaActualElem.textContent = `${LANG_DATA.ui.categoryLabel}: ${categoria}`;
-            dibujarBotonesJugadores();
-            mostrarPagina('paginaJuego');
+            
+            irAPagina('paginaJuego');
         }
+
         function dibujarBotonesJugadores() {
             contenedorBotonesJugadores.innerHTML = '';
             jugadores.forEach((jugador, index) => {
@@ -278,10 +339,10 @@
                 contenedorBotonesJugadores.appendChild(btn);
             });
         }
-        btnVolverCategorias.addEventListener('click', () => { mostrarPagina('paginaCategorias'); });
+        btnVolverCategorias.addEventListener('click', () => { window.history.back(); });
 
         // ======================================================
-        // PÁGINA 4: REVELAR (CON LÓGICA DE BLOQUEO INVISIBLE)
+        // PAGINA 4: REVELAR
         // ======================================================
         function mostrarPalabra(index) {
             lastScrollPosition = window.scrollY;
@@ -290,9 +351,8 @@
             nombreJugadorPalabraElem.textContent = `${jugador.nombre}, ${LANG_DATA.ui.wordTitle}`;
             palabraSecretaElem.textContent = jugador.palabra;
             
-            mostrarPagina('paginaPalabra');
+            irAPagina('paginaPalabra');
 
-            // Reset del Timer
             if (timerInterval) clearInterval(timerInterval);
             let tiempoRestante = 5;
             const textoOriginalBoton = LANG_DATA.ui.hideButton || "Ocultar";
@@ -305,39 +365,57 @@
 
                 if (tiempoRestante <= 0) {
                     clearInterval(timerInterval);
-                    cerrarPantallaPalabra();
+                    timerInterval = null;
+                    window.history.back();
                 }
             }, 1000);
         }
 
-        function cerrarPantallaPalabra() {
-            if (timerInterval) clearInterval(timerInterval);
-            
-            mostrarPagina('paginaJuego');
-            dibujarBotonesJugadores();
-            
-            requestAnimationFrame(() => {
-                window.scrollTo(0, lastScrollPosition);
-            });
+        btnOcultarPalabra.addEventListener('click', () => {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            window.history.back();
+        });
 
-            // ======================================================
-            // BLOQUEO INVISIBLE (POINTER-EVENTS)
-            // ======================================================
-            // Agregamos una clase al contenedor principal que desactiva los clics
-            paginaJuego.classList.add('bloqueo-temporal');
-            
-            // Después de 1.2 segundos (un poco más de margen), devolvemos los clics
-            // Visualmente NO cambia nada.
-            setTimeout(() => {
-                paginaJuego.classList.remove('bloqueo-temporal');
-            }, 500);
+        // ======================================================
+        // FUNCIÓN PARA VOLVER AL JUEGO CON BLOQUEO
+        // ======================================================
+        // Esta función es la que escucha popstate o history.back()
+        // Y aplica el bloqueo de seguridad.
+        
+        // Hack: Usamos popstate para aplicar el bloqueo cuando volvemos desde 'paginaPalabra'
+        // Pero necesitamos saber si venimos de ahí.
+        // Como irAPagina('paginaPalabra') puso un estado, cuando hacemos back volvemos a state 'paginaJuego'.
+        // El listener de popstate se encarga de renderizar.
+        
+        // Modificamos la función renderizarPagina para aplicar el bloqueo
+        // Y la lógica de bloqueo de navegación está arriba en el popstate listener.
+
+        // Sobrescribimos renderizarPagina para incluir la activación del bloqueo
+        const _renderizarPaginaOriginal = renderizarPagina;
+        renderizarPagina = function(idPagina) {
+            paginas.forEach(pagina => { pagina.classList.remove('activa'); });
+            document.getElementById(idPagina).classList.add('activa');
+
+            // Si volvemos a la página del juego...
+            if (idPagina === 'paginaJuego') {
+                dibujarBotonesJugadores();
+                
+                // 1. BLOQUEO DE CLICS UI (CSS)
+                paginaJuego.classList.add('bloqueo-temporal');
+                
+                // 2. BLOQUEO DE NAVEGACIÓN "ATRÁS" (Lógica)
+                navegacionBloqueada = true;
+
+                setTimeout(() => {
+                    paginaJuego.classList.remove('bloqueo-temporal');
+                    navegacionBloqueada = false; // Liberamos el botón Atrás
+                }, 500);
+            }
         }
 
-        btnOcultarPalabra.addEventListener('click', cerrarPantallaPalabra);
-
-        // ======================================================
-        // INICIO
-        // ======================================================
         document.addEventListener('DOMContentLoaded', () => {
             poblarSelectorIdiomas();
             cargarIdioma(langSelector.value);
