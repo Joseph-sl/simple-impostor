@@ -163,7 +163,7 @@ var DATA = {
             "Socken", "Tasse", "Seife", "Kerze", "Schokolade", "Schlüsselanhänger",
             "Deo", "Kalender", "Stift", "Schal", "Creme", "Wein"
         ],
-        "👅 Dinge, die oft kaputt gehen": [
+        "🏺 Dinge, die oft kaputt gehen": [
             "Glas", "Handy", "Herz", "Spiegel", "Knochen", "Kondom",
             "Brille", "Teller", "Bildschirm", "Reißverschluss", "Nagel"
         ],

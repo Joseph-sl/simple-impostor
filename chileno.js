@@ -176,7 +176,7 @@ var DATA = {
     "Calcetines", "Tazon", "Jabon", "Vela", "Chocolate", "Llavero",
     "Desodorante", "Agenda", "Lapiz", "Bufanda", "Crema", "Vino"
   ],
-  "👅 Cosas que se suelen rompen": [
+  "🏺 Cosas que se suelen rompen": [
     "Vaso", "Celular", "Corazon", "Espejo", "Hueso", "Condon",
     "Lentes", "Plato", "Pantalla", "Cierre", "Uña"
   ],

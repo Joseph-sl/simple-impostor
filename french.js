@@ -163,7 +163,7 @@ var DATA = {
             "Chaussettes", "Mug", "Savon", "Bougie", "Chocolat", "Porte-clés",
             "Déodorant", "Agenda", "Stylo", "Écharpe", "Crème", "Vin"
         ],
-        "👅 Choses qui cassent souvent": [
+        "🏺 Choses qui cassent souvent": [
             "Verre", "Téléphone", "Cœur", "Miroir", "Os", "Préservatif",
             "Lunettes", "Assiette", "Écran", "Fermeture éclair", "Ongle"
         ],

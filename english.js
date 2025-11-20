@@ -163,7 +163,7 @@ var DATA = {
             "Socks", "Mug", "Soap", "Candle", "Chocolate", "Keychain",
             "Deodorant", "Planner", "Pen", "Scarf", "Lotion", "Wine"
         ],
-        "👅 Things that usually break": [
+        "🏺 Things that usually break": [
             "Glass", "Phone", "Heart", "Mirror", "Bone", "Condom",
             "Glasses", "Plate", "Screen", "Zipper", "Nail"
         ],

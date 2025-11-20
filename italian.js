@@ -163,7 +163,7 @@ var DATA = {
             "Calzini", "Tazza", "Sapone", "Candela", "Cioccolato", "Portachiavi",
             "Deodorante", "Agenda", "Penna", "Sciarpa", "Crema", "Vino"
         ],
-        "👅 Cose che si rompono spesso": [
+        "🏺 Cose che si rompono spesso": [
             "Bicchiere", "Cellulare", "Cuore", "Specchio", "Osso", "Preservativo",
             "Occhiali", "Piatto", "Schermo", "Cerniera", "Unghia"
         ],
